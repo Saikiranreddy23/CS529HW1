@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import useSVGCanvas from './useSVGCanvas.js';
 import * as d3 from 'd3';
 
 export default function GunDeathsBarGraph(props) {
   const d3Container = useRef(null);
   const [svg, height, width, tTip] = useSVGCanvas(d3Container);
-  const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+  const margin = { top: 20, right: 20, bottom: 60, left: 60 };
 
   useEffect(() => {
     if (svg === undefined || props.data === undefined) {
@@ -19,6 +19,8 @@ export default function GunDeathsBarGraph(props) {
     const plotData = data.map((state) => ({
       state: state.state,
       gunDeaths: state.count,
+      maleDeaths: state.male_count,
+      femaleDeaths: state.count - state.male_count,
     }));
 
     // Create scales for x and y axes
@@ -34,21 +36,46 @@ export default function GunDeathsBarGraph(props) {
       .nice()
       .range([height - margin.bottom, margin.top]);
 
-    // Create bars for the bar graph
-    svg.selectAll('.bar').remove();
+    // Create bars for the bar graph (Male Deaths)
+    svg.selectAll('.bar-male').remove();
     svg
-      .selectAll('.bar')
+      .selectAll('.bar-male')
       .data(plotData)
       .enter()
       .append('rect')
-      .attr('class', 'bar')
+      .attr('class', 'bar-male')
       .attr('x', (d) => xScale(d.state))
-      .attr('y', (d) => yScale(d.gunDeaths))
-      .attr('width', xScale.bandwidth())
-      .attr('height', (d) => height - margin.bottom - yScale(d.gunDeaths))
-      .style('fill', 'darkblue')
+      .attr('y', (d) => yScale(d.maleDeaths))
+      .attr('width', xScale.bandwidth() / 2)
+      .attr('height', (d) => height - margin.bottom - yScale(d.maleDeaths))
+      .style('fill', 'Darkblue')
       .on('mouseover', (e, d) => {
-        const text = `${d.state}<br>Gun Deaths: ${d.gunDeaths}`;
+        const text = `${d.state}<br>Male Gun Deaths: ${d.maleDeaths}`;
+        props.ToolTip.moveTTipEvent(tTip, e);
+        tTip.html(text);
+      })
+      .on('mousemove', (e) => {
+        props.ToolTip.moveTTipEvent(tTip, e);
+      })
+      .on('mouseout', (e) => {
+        props.ToolTip.hideTTip(tTip);
+      });
+
+    // Create bars for the bar graph (Female Deaths)
+    svg.selectAll('.bar-female').remove();
+    svg
+      .selectAll('.bar-female')
+      .data(plotData)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar-female')
+      .attr('x', (d) => xScale(d.state) + xScale.bandwidth() / 2)
+      .attr('y', (d) => yScale(d.femaleDeaths))
+      .attr('width', xScale.bandwidth() / 2)
+      .attr('height', (d) => height - margin.bottom - yScale(d.femaleDeaths))
+      .style('fill', 'Red')
+      .on('mouseover', (e, d) => {
+        const text = `${d.state}<br>Female Gun Deaths: ${d.femaleDeaths}`;
         props.ToolTip.moveTTipEvent(tTip, e);
         tTip.html(text);
       })
@@ -64,11 +91,11 @@ export default function GunDeathsBarGraph(props) {
     svg
       .append('g')
       .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${(height - margin.bottom)})`)
+      .attr('transform', `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(xScale))
       .selectAll('text')
       .style('text-anchor', 'middle')
-      .attr('transform', 'rotate(-45)') // Rotate x-axis labels for better readability
+      .attr('transform', 'rotate(-45)'); // Rotate x-axis labels for better readability
 
     svg
       .append('g')
@@ -81,15 +108,14 @@ export default function GunDeathsBarGraph(props) {
     svg
       .append('text')
       .attr('x', width / 2)
-      .attr('y', height - 6)
+      .attr('y', height + margin.top + 10)
       .attr('text-anchor', 'middle')
       .text('State');
-    
-    
+
     svg
       .append('text')
       .attr('x', -height / 2)
-      .attr('y', 11)
+      .attr('y', 20 - margin.left)
       .attr('text-anchor', 'middle')
       .attr('transform', 'rotate(-90)')
       .text('Gun Deaths');
@@ -99,7 +125,7 @@ export default function GunDeathsBarGraph(props) {
       .attr('x', width / 2)
       .attr('y', margin.top - 10)
       .attr('text-anchor', 'middle')
-      .text('Gun Deaths by State');
+      .text('Gun Deaths by State (Separated by Gender)');
 
   }, [props.data, svg]);
 
