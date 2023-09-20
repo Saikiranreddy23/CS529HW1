@@ -108,14 +108,14 @@ export default function GunDeathsBarGraph(props) {
     svg
       .append('text')
       .attr('x', width / 2)
-      .attr('y', height + margin.top + 10)
+      .attr('y', height-10)
       .attr('text-anchor', 'middle')
       .text('State');
 
     svg
       .append('text')
       .attr('x', -height / 2)
-      .attr('y', 20 - margin.left)
+      .attr('y', margin.left/2-10)
       .attr('text-anchor', 'middle')
       .attr('transform', 'rotate(-90)')
       .text('Gun Deaths');
